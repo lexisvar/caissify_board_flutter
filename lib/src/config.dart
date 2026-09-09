@@ -3,6 +3,8 @@ library;
 
 import 'dart:ui' show Color;
 
+import 'drawable.dart';
+
 class BoardConfig {
   const BoardConfig({
     this.size = 8,
@@ -13,6 +15,7 @@ class BoardConfig {
     this.animate = true,
     this.animationDuration = const Duration(milliseconds: 180),
     this.pieceFontFamily,
+    this.drawable = const DrawableSettings(),
   });
 
   final int size;
@@ -23,6 +26,7 @@ class BoardConfig {
   final bool animate;
   final Duration animationDuration;
   final String? pieceFontFamily;
+  final DrawableSettings drawable;
 
   BoardConfig copyWith({
     int? size,
@@ -33,6 +37,7 @@ class BoardConfig {
     bool? animate,
     Duration? animationDuration,
     String? pieceFontFamily,
+    DrawableSettings? drawable,
   }) {
     final next = BoardConfig(
       size: size ?? this.size,
@@ -43,6 +48,7 @@ class BoardConfig {
       animate: animate ?? this.animate,
       animationDuration: animationDuration ?? this.animationDuration,
       pieceFontFamily: pieceFontFamily ?? this.pieceFontFamily,
+      drawable: drawable ?? this.drawable,
     );
     if (next.size < 2 || next.size > 26) {
       throw ArgumentError('board size must be between 2 and 26, got ${next.size}');

@@ -7,6 +7,7 @@ export 'src/geometry.dart';
 export 'src/state.dart';
 export 'src/config.dart';
 export 'src/effects.dart';
+export 'src/drawable.dart';
 export 'src/controller.dart';
 export 'src/board_widget.dart';
 

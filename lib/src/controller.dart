@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'config.dart';
+import 'drawable.dart';
 import 'effects.dart';
 import 'geometry.dart';
 import 'state.dart';
@@ -26,6 +27,15 @@ class BoardController extends ChangeNotifier {
   BoardConfig _config;
 
   late final FxController fx = FxController(onSound: _emitSound);
+
+  late final DrawableController drawable = DrawableController(config: _config.drawable);
+
+  /// Drawing lifecycle hooks, mirroring the web engine's shape:add /
+  /// shape:remove / shape:change / shapes:clear events.
+  void Function(Shape shape)? onShapeAdd;
+  void Function(List<Shape> shapes)? onShapeRemove;
+  void Function(Shape shape)? onShapeChange;
+  void Function()? onShapesClear;
 
   final List<void Function(SoundMoment)> _soundListeners = [];
 
@@ -77,6 +87,52 @@ class BoardController extends ChangeNotifier {
     return true;
   }
 
+  /// Replace the drawing overlay (arrows/circles) from the host.
+  void setShapes(List<Shape> next) {
+    drawable.setShapes(next);
+    notifyListeners();
+  }
+
+  /// Clear every drawing; returns true when there was anything to clear.
+  bool clearShapes() {
+    final cleared = drawable.clearShapes();
+    if (cleared) {
+      onShapesClear?.call();
+      notifyListeners();
+    }
+    return cleared;
+  }
+
+  /// Begin a right/shift drag on a square (renderer input plumbing).
+  void startDraw(String square, bool shiftKey) {
+    if (!_config.drawable.enabled) return;
+    drawable.config = _config.drawable;
+    drawable.startDrag(square, shiftKey);
+    notifyListeners();
+  }
+
+  void moveDraw(String square) {
+    if (drawable.current == null) return;
+    drawable.moveDrag(square);
+    notifyListeners();
+  }
+
+  /// Finish a drag and fire the matching lifecycle hook.
+  void endDraw() {
+    final result = drawable.endDrag();
+    if (result == null) {
+      notifyListeners();
+      return;
+    }
+    final added = result.added;
+    if (added != null) onShapeAdd?.call(added);
+    final removed = result.removed;
+    if (removed != null) onShapeRemove?.call(removed);
+    final changed = result.changed;
+    if (changed != null) onShapeChange?.call(changed);
+    notifyListeners();
+  }
+
   void setSquareClasses(String square, List<String> classes) {
     if (geometry.parseKey(square) == null) return;
     state.setSquareClasses(square, classes);
@@ -96,8 +152,11 @@ class BoardController extends ChangeNotifier {
       state.squares.removeWhere((key, _) => !geometry.isValidKey(key));
       fx.clearMarkers();
       tweens.clear();
+      drawable.setShapes(const []);
+      drawable.cancelDrag();
     }
     _config = next;
+    drawable.config = next.drawable;
     notifyListeners();
   }
 

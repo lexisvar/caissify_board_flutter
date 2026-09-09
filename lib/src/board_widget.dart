@@ -4,6 +4,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton;
+import 'package:flutter/services.dart' show HardwareKeyboard;
 
 import 'board_painter.dart';
 import 'controller.dart';
@@ -78,7 +80,9 @@ class _CaissifyBoardState extends State<CaissifyBoard>
     return AspectRatio(
       aspectRatio: 1,
       child: Listener(
-        onPointerDown: _handleTap,
+        onPointerDown: _handlePointerDown,
+        onPointerMove: _handlePointerMove,
+        onPointerUp: (_) => widget.controller.endDraw(),
         child: CustomPaint(
           painter: BoardPainter(
             controller: controller,
@@ -92,11 +96,10 @@ class _CaissifyBoardState extends State<CaissifyBoard>
     );
   }
 
-  void _handleTap(PointerDownEvent event) {
-    if (!widget.controller.config.interactive) return;
+  String? _squareAt(Offset position) {
     final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null || !renderBox.hasSize) return;
-    final local = renderBox.globalToLocal(event.position);
+    if (renderBox == null || !renderBox.hasSize) return null;
+    final local = renderBox.globalToLocal(position);
     final geometry = widget.controller.geometry;
     final pos = geometry.positionAtPoint(
       local.dx,
@@ -104,8 +107,36 @@ class _CaissifyBoardState extends State<CaissifyBoard>
       renderBox.size.width,
       flip: widget.controller.config.flip,
     );
-    if (pos == null) return;
-    final key = geometry.formatKey(pos.$1, pos.$2);
-    widget.onSquareTap?.call(key);
+    if (pos == null) return null;
+    return geometry.formatKey(pos.$1, pos.$2);
+  }
+
+  void _handlePointerDown(PointerDownEvent event) {
+    final controller = widget.controller;
+    if (!controller.config.interactive) return;
+    final square = _squareAt(event.position);
+    if (square == null) return;
+
+    // chessground parity: a drawing starts on the secondary (right) button
+    // or on shift+drag with the primary one
+    final drawable = controller.config.drawable;
+    final wantsDraw = drawable.enabled &&
+        (event.buttons & kSecondaryButton != 0 ||
+            (event.buttons & kPrimaryButton != 0 && HardwareKeyboard.instance.isShiftPressed));
+    if (wantsDraw) {
+      controller.startDraw(square, HardwareKeyboard.instance.isShiftPressed);
+      return;
+    }
+    if (event.buttons & kPrimaryButton == 0) return;
+    if (drawable.enabled && drawable.clearOnTap && controller.clearShapes()) {
+      // tap clears the board; the tap itself still flows to the host
+    }
+    widget.onSquareTap?.call(square);
+  }
+
+  void _handlePointerMove(PointerMoveEvent event) {
+    final square = _squareAt(event.position);
+    if (square != null) widget.controller.moveDraw(square);
   }
 }
+
