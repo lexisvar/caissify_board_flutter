@@ -7,7 +7,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton;
 import 'package:flutter/services.dart' show HardwareKeyboard;
 
-import 'board_painter.dart';
+import 'board_painter.dart' show BoardPainter, coordLayout;
 import 'controller.dart';
 
 class CaissifyBoard extends StatefulWidget {
@@ -100,11 +100,12 @@ class _CaissifyBoardState extends State<CaissifyBoard>
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null || !renderBox.hasSize) return null;
     final local = renderBox.globalToLocal(position);
+    final (origin, extent) = coordLayout(renderBox.size, widget.controller.config.coordinates);
     final geometry = widget.controller.geometry;
     final pos = geometry.positionAtPoint(
-      local.dx,
-      local.dy,
-      renderBox.size.width,
+      local.dx - origin.dx,
+      local.dy - origin.dy,
+      extent,
       flip: widget.controller.config.flip,
     );
     if (pos == null) return null;

@@ -10,6 +10,15 @@ import 'drawable.dart';
 import 'geometry.dart';
 import 'state.dart';
 
+/// Layout of the playing area inside the canvas when coordinates render in
+/// an outer margin: the board's top-left offset and its side length.
+/// Shared by the painter and the widget's hit-testing.
+(Offset, double) coordLayout(Size canvas, CoordinatesMode mode) {
+  if (mode != CoordinatesMode.outside) return (Offset.zero, canvas.width);
+  final pad = canvas.width * 0.06; // scales with the board, not the cell count
+  return (Offset(pad, pad), canvas.width - pad);
+}
+
 const _roleGlyphs = <String, String>{
   'king': '♔',
   'queen': '♕',
@@ -35,6 +44,15 @@ class BoardPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final (origin, extent) = coordLayout(size, config.coordinates);
+    canvas.save();
+    canvas.translate(origin.dx, origin.dy);
+    _paintBoard(canvas, Size(extent, extent));
+    canvas.restore();
+    _paintCoordinates(canvas, size, extent);
+  }
+
+  void _paintBoard(Canvas canvas, Size size) {
     final cell = size.width / geometry.size;
 
     // exact checkerboard — parity computed per square, any N
@@ -74,6 +92,95 @@ class BoardPainter extends CustomPainter {
     }
     final live = controller.drawable.current;
     if (live != null) _paintShape(canvas, cell, live, live: true);
+
+    if (config.coordinates == CoordinatesMode.inside) {
+      _paintInsideCoordinates(canvas, size);
+    }
+  }
+
+  /// One text label, centered in [rect].
+  void _paintLabel(Canvas canvas, String text, Rect rect, double fontSize, Color color) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w600,
+          color: color,
+          fontFamily: config.pieceFontFamily,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, rect.center - Offset(tp.width / 2, tp.height / 2));
+  }
+
+  Color _coordColor(bool onLight) => onLight
+      ? const Color(0x9E1E143C) // dark ink on light squares
+      : const Color(0xB8FFFDF6); // cream on dark squares
+
+  /// Rank labels down the left squares, file labels along the bottom ones —
+  /// each colored against the parity of the square it sits on (board-local
+  /// coordinates; call inside the translated board pass).
+  void _paintInsideCoordinates(Canvas canvas, Size board) {
+    final n = geometry.size;
+    final cell = board.width / n;
+    final font = (cell * 0.32).clamp(8.0, 15.0);
+    for (var row = 0; row < n; row++) {
+      final rank = config.flip ? row + 1 : n - row;
+      final file = config.flip ? n - 1 : 0;
+      final rect = Rect.fromLTWH(0, row * cell, cell * 0.5, cell * 0.5);
+      _paintLabel(canvas, '$rank', rect, font, _coordColor(isLightSquare(file, rank - 1)));
+    }
+    for (var column = 0; column < n; column++) {
+      final file = config.flip ? n - 1 - column : column;
+      final rank1 = config.flip ? n : 1;
+      final rect = Rect.fromLTWH(
+        column * cell + cell * 0.5,
+        board.height - cell * 0.5,
+        cell * 0.5,
+        cell * 0.5,
+      );
+      _paintLabel(
+        canvas,
+        String.fromCharCode(97 + file),
+        rect,
+        font,
+        _coordColor(isLightSquare(file, rank1 - 1)),
+      );
+    }
+  }
+
+  /// Outside labels in the margin: ranks down the left strip, files along
+  /// the bottom strip (absolute canvas coordinates).
+  void _paintCoordinates(Canvas canvas, Size canvasSize, double extent) {
+    if (config.coordinates != CoordinatesMode.outside) return;
+    final n = geometry.size;
+    final (origin, boardExtent) = coordLayout(canvasSize, config.coordinates);
+    final cell = boardExtent / n;
+    final pad = origin.dx; // the margin width
+    final font = (cell * 0.4).clamp(9.0, 16.0);
+    final color = const Color(0x8C1E143C);
+    for (var row = 0; row < n; row++) {
+      final rank = config.flip ? row + 1 : n - row;
+      _paintLabel(
+        canvas,
+        '$rank',
+        Rect.fromLTWH(0, origin.dy + row * cell, pad, cell),
+        font,
+        color,
+      );
+    }
+    for (var column = 0; column < n; column++) {
+      final file = config.flip ? n - 1 - column : column;
+      _paintLabel(
+        canvas,
+        String.fromCharCode(97 + file),
+        Rect.fromLTWH(origin.dx + column * cell, canvasSize.height - pad, cell, pad),
+        font,
+        color,
+      );
+    }
   }
 
   /// Top-left of a square in pixels, matching geometry + flip.

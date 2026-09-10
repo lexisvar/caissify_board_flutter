@@ -5,6 +5,10 @@ import 'dart:ui' show Color;
 
 import 'drawable.dart';
 
+/// Where coordinate labels render: hidden, on the edge squares, or in a
+/// margin around the board.
+enum CoordinatesMode { none, inside, outside }
+
 class BoardConfig {
   const BoardConfig({
     this.size = 8,
@@ -16,6 +20,7 @@ class BoardConfig {
     this.animationDuration = const Duration(milliseconds: 180),
     this.pieceFontFamily,
     this.drawable = const DrawableSettings(),
+    this.coordinates = CoordinatesMode.none,
   });
 
   final int size;
@@ -27,6 +32,7 @@ class BoardConfig {
   final Duration animationDuration;
   final String? pieceFontFamily;
   final DrawableSettings drawable;
+  final CoordinatesMode coordinates;
 
   BoardConfig copyWith({
     int? size,
@@ -38,6 +44,7 @@ class BoardConfig {
     Duration? animationDuration,
     String? pieceFontFamily,
     DrawableSettings? drawable,
+    CoordinatesMode? coordinates,
   }) {
     final next = BoardConfig(
       size: size ?? this.size,
@@ -49,6 +56,7 @@ class BoardConfig {
       animationDuration: animationDuration ?? this.animationDuration,
       pieceFontFamily: pieceFontFamily ?? this.pieceFontFamily,
       drawable: drawable ?? this.drawable,
+      coordinates: coordinates ?? this.coordinates,
     );
     if (next.size < 2 || next.size > 26) {
       throw ArgumentError('board size must be between 2 and 26, got ${next.size}');
