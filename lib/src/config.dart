@@ -1,7 +1,7 @@
 /// Board configuration — one validated object.
 library;
 
-import 'dart:ui' show Color;
+import 'dart:ui' show Color, Image;
 
 import 'drawable.dart';
 
@@ -21,6 +21,7 @@ class BoardConfig {
     this.pieceFontFamily,
     this.drawable = const DrawableSettings(),
     this.coordinates = CoordinatesMode.none,
+    this.pieceArt,
   });
 
   final int size;
@@ -34,6 +35,12 @@ class BoardConfig {
   final DrawableSettings drawable;
   final CoordinatesMode coordinates;
 
+  /// Host-injected raster piece art, keyed `'<color>-<role>'`
+  /// (e.g. 'white-knight'). The engine ships none: hosts own the art,
+  /// matching the web engine's pieceArt option. Pieces without a match
+  /// fall back to the built-in glyph tokens.
+  final Map<String, Image>? pieceArt;
+
   BoardConfig copyWith({
     int? size,
     Color? light,
@@ -45,6 +52,7 @@ class BoardConfig {
     String? pieceFontFamily,
     DrawableSettings? drawable,
     CoordinatesMode? coordinates,
+    Map<String, Image>? pieceArt,
   }) {
     final next = BoardConfig(
       size: size ?? this.size,
@@ -57,6 +65,7 @@ class BoardConfig {
       pieceFontFamily: pieceFontFamily ?? this.pieceFontFamily,
       drawable: drawable ?? this.drawable,
       coordinates: coordinates ?? this.coordinates,
+      pieceArt: pieceArt ?? this.pieceArt,
     );
     if (next.size < 2 || next.size > 26) {
       throw ArgumentError('board size must be between 2 and 26, got ${next.size}');

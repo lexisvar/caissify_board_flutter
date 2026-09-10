@@ -259,6 +259,18 @@ class BoardPainter extends CustomPainter {
   }
 
   void _paintPiece(Canvas canvas, Piece piece, Offset topLeft, double cell) {
+    // Host-injected raster art wins; glyph tokens are the fallback.
+    final art = config.pieceArt?['${piece.color}-${piece.role}'];
+    if (art != null) {
+      final dst = Rect.fromLTWH(topLeft.dx, topLeft.dy, cell, cell);
+      canvas.drawImageRect(
+        art,
+        Rect.fromLTWH(0, 0, art.width.toDouble(), art.height.toDouble()),
+        dst,
+        Paint()..filterQuality = FilterQuality.medium,
+      );
+      return;
+    }
     final rect = Rect.fromLTWH(topLeft.dx + cell * 0.08, topLeft.dy + cell * 0.08, cell * 0.84, cell * 0.84);
     final darkPiece = piece.color.toLowerCase() == 'black';
     final fill = Paint()..color = darkPiece ? const Color(0xFF33234F) : const Color(0xFFFFFDF6);

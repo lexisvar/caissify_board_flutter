@@ -1,6 +1,6 @@
 name: caissify_board
 description: Headless NxN board engine with first-class game effects. Renders and animates; the game decides.
-version: 0.1.0
+version: 0.2.0
 publish_to: none
 
 environment:
