@@ -3,7 +3,6 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/scheduler.dart';
 
 import 'config.dart';
 import 'drawable.dart';
