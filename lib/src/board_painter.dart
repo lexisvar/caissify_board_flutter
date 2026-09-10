@@ -15,8 +15,10 @@ import 'state.dart';
 /// Shared by the painter and the widget's hit-testing.
 (Offset, double) coordLayout(Size canvas, CoordinatesMode mode) {
   if (mode != CoordinatesMode.outside) return (Offset.zero, canvas.width);
+  // an EVEN coordinate band on all four sides; labels render in the left
+  // and bottom strips (chess convention), top and right stay as breathing room
   final pad = canvas.width * 0.06; // scales with the board, not the cell count
-  return (Offset(pad, pad), canvas.width - pad);
+  return (Offset(pad, pad), canvas.width - 2 * pad);
 }
 
 const _roleGlyphs = <String, String>{

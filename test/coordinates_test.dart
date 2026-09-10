@@ -16,11 +16,11 @@ void main() {
   });
 
   group('coordinate layout', () {
-    test('outside mode reserves a proportional margin', () {
+    test('outside mode reserves an even band on all four sides', () {
       final (origin, extent) =
           coordLayout(const Size(400, 400), CoordinatesMode.outside);
       expect(origin.dx, 24.0); // 6% of 400
-      expect(extent, 376.0);
+      expect(extent, 352.0); // 400 - 2*24: symmetric frame
       final (zero, full) =
           coordLayout(const Size(400, 400), CoordinatesMode.inside);
       expect(zero, Offset.zero);
@@ -48,8 +48,8 @@ void main() {
       ),
     );
     final rect = tester.getRect(find.byType(CaissifyBoard));
-    // a1 center, shifted by the 24px margin
-    await tester.tapAt(rect.topLeft + const Offset(24 + 25, 24 + 375));
+    // a1 center inside the even 24px frame: board = 352px, cell = 35.2
+    await tester.tapAt(rect.topLeft + const Offset(24 + 17.6, 24 + 9.5 * 35.2));
     await tester.pump();
     expect(taps, ['a1']);
   });
