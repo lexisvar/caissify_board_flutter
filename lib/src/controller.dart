@@ -39,9 +39,15 @@ class BoardController extends ChangeNotifier {
 
   final List<void Function(SoundMoment)> _soundListeners = [];
 
-  /// Injectable clock for tests (defaults to the frame timebase).
-  double Function() clock = () =>
-      SchedulerBinding.instance.currentFrameTimeStamp.inMicroseconds / 1e6;
+  /// Injectable clock for tests (defaults to the wall clock).
+  ///
+  /// The default deliberately avoids SchedulerBinding.currentFrameTimeStamp:
+  /// that value is only valid WHILE a frame is being built, and hosts
+  /// legitimately mutate the board from pointer callbacks, which fire
+  /// between frames — reading it there asserts
+  /// (_currentFrameTimeStamp != null) and kills the event handler.
+  /// Wall-clock microseconds keep tween math monotonic in every context.
+  double Function() clock = () => DateTime.now().microsecondsSinceEpoch / 1e6;
 
   final List<BoardTween> tweens = [];
 
