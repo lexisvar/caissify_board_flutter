@@ -8,6 +8,7 @@ import 'config.dart';
 import 'controller.dart';
 import 'drawable.dart';
 import 'geometry.dart';
+import 'shape_painter.dart';
 import 'state.dart';
 
 /// Layout of the playing area inside the canvas when coordinates render in
@@ -194,52 +195,17 @@ class BoardPainter extends CustomPainter {
   }
 
   void _paintShape(Canvas canvas, double cell, Shape shape, {required bool live}) {
-    final brush = controller.drawable.brushOf(shape.brush);
-    final color = brush.color.withValues(alpha: brush.opacity * (live ? 0.55 : 1.0));
-    if (shape is CircleShape) {
-      final center = _squareTopLeft(shape.square, cell * geometry.size) + Offset(cell / 2, cell / 2);
-      canvas.drawCircle(
-        center,
-        cell * 0.45,
-        Paint()..color = brush.color.withValues(alpha: 0.14 * brush.opacity),
-      );
-      canvas.drawCircle(
-        center,
-        cell * 0.45,
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = cell * 0.09 * brush.width,
-      );
-      return;
-    }
-    if (shape is! ArrowShape) return;
-    final cellPixels = cell * geometry.size;
-    final from = _squareTopLeft(shape.from, cellPixels) + Offset(cell / 2, cell / 2);
-    final to = _squareTopLeft(shape.to, cellPixels) + Offset(cell / 2, cell / 2);
-    final delta = to - from;
-    final length = delta.distance;
-    if (length <= 0) return;
-    final unit = delta / length;
-    const head = 0.34; // arrowhead length in square units
-    const half = 0.15; // arrowhead half width in square units
-    final shaftEnd = from + unit * (length - head * cell > 0.18 * cell ? length - head * cell : 0.18 * cell);
-    canvas.drawLine(
-      from,
-      shaftEnd,
-      Paint()
-        ..color = color
-        ..strokeWidth = cell * 0.18 * brush.width
-        ..strokeCap = StrokeCap.round,
+    final pixels = cell * geometry.size;
+    paintBoardShape(
+      canvas,
+      shape: shape,
+      brush: controller.drawable.brushOf(shape.brush),
+      centerOf: (square) => geometry.isValidKey(square)
+          ? _squareTopLeft(square, pixels) + Offset(cell / 2, cell / 2)
+          : null,
+      cell: cell,
+      live: live,
     );
-    final headBase = to - unit * head * cell;
-    final perpendicular = Offset(-unit.dy, unit.dx);
-    final arrowHead = Path()
-      ..moveTo(to.dx, to.dy)
-      ..lineTo(headBase.dx + perpendicular.dx * half * cell, headBase.dy + perpendicular.dy * half * cell)
-      ..lineTo(headBase.dx - perpendicular.dx * half * cell, headBase.dy - perpendicular.dy * half * cell)
-      ..close();
-    canvas.drawPath(arrowHead, Paint()..color = color);
   }
 
   void _paintSquareClasses(Canvas canvas, Set<String> classes, Rect rect) {

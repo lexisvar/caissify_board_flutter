@@ -1,13 +1,12 @@
-/// Lichess-style board drawing: arrows and circles drawn with a secondary
-/// (right) button drag or shift+drag, erased from their origin, toggled by
-/// redrawing. Mirrors the web engine's drawable vocabulary one-for-one so
+/// Board drawing: arrows and circles drawn with a secondary (right) button
+/// drag or shift+drag, erased from their origin, toggled by redrawing. Mirrors the web engine's drawable vocabulary one-for-one so
 /// games behave identically on both platforms.
 library;
 
 import 'dart:ui' show Color;
 
-/// A drawing color: same families as chessground's defaults, in our own
-/// tones (deliberately different hex values from the known lichess brushes).
+/// A drawing color: the usual analysis-board colour families, in our own
+/// tones.
 class Brush {
   const Brush({
     required this.key,
@@ -22,7 +21,7 @@ class Brush {
   /// Stroke opacity for shapes drawn with this brush.
   final double opacity;
 
-  /// Stroke width multiplier (paleBlue draws wider, like chessground's).
+  /// Stroke width multiplier (paleBlue draws wider).
   final double width;
 }
 
@@ -36,23 +35,69 @@ const defaultBrushes = <Brush>[
 ];
 
 /// A committed or in-progress drawing.
+///
+/// [brush] names one of the board's [Brush]es; [color], when set, paints
+/// the shape in that exact colour instead (hosts with their own palette).
+/// [scale] thins the stroke (live previews draw at 0.8).
 sealed class Shape {
-  const Shape({required this.brush});
+  const Shape({required this.brush, this.color, this.scale = 1.0});
 
   final String brush;
+  final Color? color;
+  final double scale;
 }
 
 class ArrowShape extends Shape {
-  const ArrowShape({required this.from, required this.to, required super.brush});
+  const ArrowShape({
+    required this.from,
+    required this.to,
+    required super.brush,
+    super.color,
+    super.scale,
+  });
 
   final String from;
   final String to;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ArrowShape &&
+      other.from == from &&
+      other.to == to &&
+      other.brush == brush &&
+      other.color == color &&
+      other.scale == scale;
+
+  @override
+  int get hashCode => Object.hash('arrow', from, to, brush, color, scale);
+
+  @override
+  String toString() => 'ArrowShape($from-$to $brush${color == null ? '' : ' $color'})';
 }
 
 class CircleShape extends Shape {
-  const CircleShape({required this.square, required super.brush});
+  const CircleShape({
+    required this.square,
+    required super.brush,
+    super.color,
+    super.scale,
+  });
 
   final String square;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CircleShape &&
+      other.square == square &&
+      other.brush == brush &&
+      other.color == color &&
+      other.scale == scale;
+
+  @override
+  int get hashCode => Object.hash('circle', square, brush, color, scale);
+
+  @override
+  String toString() => 'CircleShape($square $brush${color == null ? '' : ' $color'})';
 }
 
 /// What a finished drag did: added, toggled off (removed) or recolored.

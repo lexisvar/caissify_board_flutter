@@ -12,3 +12,8 @@ export 'src/controller.dart';
 export 'src/board_widget.dart';
 
 export 'src/board_painter.dart';
+
+export 'src/chess_board.dart';
+export 'src/chess_board_gestures.dart';
+export 'src/chess_board_models.dart';
+export 'src/shape_painter.dart';

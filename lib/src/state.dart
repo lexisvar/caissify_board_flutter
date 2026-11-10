@@ -7,6 +7,20 @@ class Piece {
   final String role;
   final String color;
   final Map<String, Object>? data;
+
+  /// `'<color>-<role>'`, e.g. `white-knight` (the [BoardConfig.pieceArt]
+  /// key and a handy asset name).
+  String get kind => '$color-$role';
+
+  @override
+  bool operator ==(Object other) =>
+      other is Piece && other.role == role && other.color == color && identical(other.data, data);
+
+  @override
+  int get hashCode => Object.hash(role, color, data);
+
+  @override
+  String toString() => 'Piece($kind)';
 }
 
 

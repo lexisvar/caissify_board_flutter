@@ -118,7 +118,7 @@ class _CaissifyBoardState extends State<CaissifyBoard>
     final square = _squareAt(event.position);
     if (square == null) return;
 
-    // chessground parity: a drawing starts on the secondary (right) button
+    // a drawing starts on the secondary (right) button
     // or on shift+drag with the primary one
     final drawable = controller.config.drawable;
     final wantsDraw = drawable.enabled &&
